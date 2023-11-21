@@ -36,4 +36,16 @@ cartRouter.delete("/delete/:id",async (req,res)=>{
     }
 })
 
+cartRouter.delete("/delete/:id",async (req,res)=>{
+    let id = req.params.id
+    try {
+        let data=Cartmodel.find({userID})
+        if(data.userID==req.body.userID){
+            await Cartmodel.findByIdAndDelete(id)
+        }
+    } catch (error) {
+        console.log(error);
+        res.send({error: error.message})
+    }
+})
 module.exports = cartRouter
