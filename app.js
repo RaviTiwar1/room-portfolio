@@ -28,7 +28,6 @@ app.use("/api/user",require("./routes/user.route"))
 app.use("/api/products",require("./routes/product.route"))
 app.use("/api/orders",require("./routes/order.route"))
 app.use("/api/cart",require("./routes/cart.route"))
-
 app.listen(process.env.PORT,async ()=>{
     try {
         await connection
