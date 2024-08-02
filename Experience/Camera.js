@@ -1,86 +1,90 @@
-import * as THREE from 'three'
-import Experience from './Experience.js'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import * as THREE from "three";
 
-export default class Camera
-{
-    constructor(_options)
-    {
-        // Options
-        this.experience = new Experience()
-        this.config = this.experience.config
-        this.debug = this.experience.debug
-        this.time = this.experience.time
-        this.sizes = this.experience.sizes
-        this.targetElement = this.experience.targetElement
-        this.scene = this.experience.scene
+import Experience from "./Experience";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-        // Set up
-        this.mode = 'default' // default \ debug
+export default class Camera {
+  constructor() {
+    this.experience = new Experience();
+    this.sizes = this.experience.sizes;
+    this.scene = this.experience.scene;
+    this.canvas = this.experience.canvas;
 
-        this.setInstance()
-        this.setModes()
-    }
+    this.createPerspectiveCamera();
+    this.createOrthographicCamera();
+    this.setOrbitControls();
+  }
 
-    setInstance()
-    {
-        // Set up
-        this.instance = new THREE.PerspectiveCamera(20, this.config.width / this.config.height, 0.1, 150)
-        this.instance.rotation.reorder('YXZ')
+  createPerspectiveCamera() {
+    this.perspectiveCamera = new THREE.PerspectiveCamera(
+      35,
+      this.sizes.aspect,
+      0.1,
+      1000
+    );
+    this.scene.add(this.perspectiveCamera);
 
-        this.scene.add(this.instance)
-    }
+    this.perspectiveCamera.position.z = 12;
+    this.perspectiveCamera.position.x = 29;
+    this.perspectiveCamera.position.y = 14;
+  }
 
-    setModes()
-    {
-        this.modes = {}
+  createOrthographicCamera() {
+    this.orthographicCamera = new THREE.OrthographicCamera(
+      (-this.sizes.aspect * this.sizes.frustrum) / 2,
+      (this.sizes.aspect * this.sizes.frustrum) / 2,
+      this.sizes.frustrum / 1.8,
+      -this.sizes.frustrum / 2,
+      -20,
+      20
+    );
+    this.orthographicCamera.position.y = 5.5;
+    this.orthographicCamera.position.z = 7;
+    this.orthographicCamera.rotation.x = -Math.PI / 6;
+    this.orthographicCamera.receiveShadow = true;
+    this.orthographicCamera.scale.set(1.6, 1.6, 1.6);
 
-        // Default
-        this.modes.default = {}
-        this.modes.default.instance = this.instance.clone()
-        this.modes.default.instance.rotation.reorder('YXZ')
+    // this.helper = new THREE.CameraHelper(this.orthographicCamera);
+    // this.scene.add(this.helper);
 
-        // Debug
-        this.modes.debug = {}
-        this.modes.debug.instance = this.instance.clone()
-        this.modes.debug.instance.rotation.reorder('YXZ')
-        this.modes.debug.instance.position.set(- 15, 15, 15)
-        
-        this.modes.debug.orbitControls = new OrbitControls(this.modes.debug.instance, this.targetElement)
-        this.modes.debug.orbitControls.enabled = false
-        this.modes.debug.orbitControls.screenSpacePanning = true
-        this.modes.debug.orbitControls.enableKeys = false
-        this.modes.debug.orbitControls.zoomSpeed = 0.25
-        this.modes.debug.orbitControls.enableDamping = true
-        this.modes.debug.orbitControls.update()
-    }
+    const size = 20;
+    const divisions = 20;
 
+    // const gridHelper = new THREE.GridHelper(size, divisions);
+    // this.scene.add(gridHelper);
 
-    resize()
-    {
-        this.instance.aspect = this.config.width / this.config.height
-        this.instance.updateProjectionMatrix()
+    // const axesHelper = new THREE.AxesHelper(10);
+    // this.scene.add(axesHelper);
+  }
+  setOrbitControls() {
+    this.controls = new OrbitControls(this.orthographicCamera, this.canvas);
+    this.controls.enableDamping = true;
+    this.controls.enableZoom = false;
+    this.controls2 = new OrbitControls(this.perspectiveCamera, this.canvas);
+    this.controls2.enableDamping = true;
+    this.controls2.enableZoom = true;
+  }
+  resize() {
+    // updating perspective on resize
+    this.perspectiveCamera.aspect = this.sizes.aspect;
+    this.perspectiveCamera.updateProjectionMatrix();
 
-        this.modes.default.instance.aspect = this.config.width / this.config.height
-        this.modes.default.instance.updateProjectionMatrix()
+    // updating orthographic on resize
+    this.orthographicCamera.left =
+      (-this.sizes.aspect * this.sizes.frustrum) / 2;
+    this.orthographicCamera.top = this.sizes.frustrum / 2;
+    this.orthographicCamera.right =
+      (this.sizes.aspect * this.sizes.frustrum) / 2;
+    this.orthographicCamera.bottom = -this.sizes.frustrum / 2;
+    this.orthographicCamera.updateProjectionMatrix();
+  }
 
-        this.modes.debug.instance.aspect = this.config.width / this.config.height
-        this.modes.debug.instance.updateProjectionMatrix()
-    }
+  update() {
+    this.controls.update();
 
-    update()
-    {
-        // Update debug orbit controls
-        this.modes.debug.orbitControls.update()
-
-        // Apply coordinates
-        this.instance.position.copy(this.modes[this.mode].instance.position)
-        this.instance.quaternion.copy(this.modes[this.mode].instance.quaternion)
-        this.instance.updateMatrixWorld() // To be used in projection
-    }
-
-    destroy()
-    {
-        this.modes.debug.orbitControls.destroy()
-    }
+    // this.helper.matrixWorldNeedsUpdate = true;
+    // this.helper.update;
+    // this.helper.position.copy(this.orthographicCamera.position);
+    // this.helper.rotation.copy(this.orthographicCamera.rotation);
+  }
 }
